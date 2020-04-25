@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="MainApp">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Dashboard</title>
+      
+    <link href="css/reset.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+    <link href="css/responsive.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    
+  </head>
+  <body ng-controller="MyController">
+    
+    <div id="main-container">
+
+            <div id="head-container">
+                <div class="logo">
+                    <h1>DASHBOARD</h1>
+                </div>
+
+                <div class="ftop-right">
+                    <!-- add new list -->
+                    <input type="text" class="input-create" ng-model="list" placeholder="New To-do List">
+                    <a href="#" class="btn btn-create" ng-click="newList(list)">Create</a>
+                </div>
+            </div>
+
+            <div id="body-container">
+           
+                <div class="main-list" ng-repeat="list in lists track by $index" >
+
+                    <div class="head-list">
+                        <div class="head-text">
+                            <inline-editor change="updateLabel($index,$text,list)"  value="{{list.list}}"  ng-click="hideButton()">{{list.list}}</inline-editor> 
+                        </div>
+
+                        <!-- <div class="head-btn"  ng-hide="HideFlag" ng-show="ShowFlag" > -->
+
+                        <div class="head-btn"  ng-hide="HideFlag" ng-show="ShowFlag" >
+                            <a class="btn-list btn-add" ng-click="showInput()">
+                                <img src="images/icon-additem.png" width="22"/>
+                            </a>
+                            <a class="btn-list btn-delete" ng-click="delList($index)">
+                                <img src="images/icon-trash.jpg" width="22"/>
+                            </a>
+                        </div>
+                        
+                    </div>
+
+              
+                    <div  class="body-list">
+
+                        <!-- add new item -->
+                        <input type="text" class="input-new-item"  
+                            ng-show="IsVisible"  
+                            ng-style="hideStyle"  
+                            ng-model="newitem" 
+                            on-esc="canCel()" 
+                            on-enter="addItem($index,newitem)" 
+                            placeholder="New Item" 
+                        />
+
+
+                        <div id="{{list.list}}" class="item-list" ng-repeat="item in list.item track by $index" droppable>   
+                            <div id="{{ item.name }}" draggable >
+                                <input type="checkbox" ng-model="item.done">
+                                <span class="item-text" ng-class="{'done':item.done}">{{item.name}}</span>
+                                <a class="btn-item-delete" ng-click="delItem($index,lists)"><i class="fa fa-close"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+    </div>
+
+
+    <script src="js/main.js"></script>
+
+
+    <script>
+
+        // { 
+        //     list: 'Movies to watch', 
+        //     item: [
+        //         {'name': 'Intersella', 'done': false }
+        //     ] 
+        // }
+
+        var app = angular.module('MainApp', [])   
+
+        //enter event
+        app.directive('onEnter', function () {
+            return function (scope, element, attrs) {
+                element.bind("keydown keypress", function (event) {
+                    if(event.which === 13) {
+                        scope.$apply(function (){
+                            scope.$eval(attrs.onEnter);
+                        });
+                        event.preventDefault();
+                    }
+                });
+            };
+        });
+
+        //esc event
+        app.directive('onEsc', function () {
+            return function (scope, element, attrs) {
+                element.bind("keydown keypress", function (event) {
+                    if(event.which === 27) {
+                        scope.$apply(function (){
+                            scope.$eval(attrs.onEsc);
+                        });
+                        event.preventDefault();
+                    }
+                });
+            };
+        });
+
+        //inline edit
+        app.directive('inlineEditor', function () {
+            return {
+                restrict: 'E',
+                scope: {
+                    changeFn: '&change',
+                    valueText: '@value'
+                },
+                
+                controller: function ($scope) {
+                    $scope.editing = false;
+
+                    $scope.switchToEditMode = function () {
+                        $scope.newValue = $scope.valueText;
+                        $scope.editing = true;
+                    };
+                    
+                    $scope.switchToNormalMode = function () {
+                        $scope.newValue = '';
+                        $scope.editing = false;
+                    };
+                    
+                    $scope.sendNewValue = function () {
+                        $scope.editing = false;
+                        $scope.changeFn({ $text: $scope.newValue });
+                    }
+
+                },
+                template: '<div>' +
+                            '<div ng-hide="editing">' +
+                                '<div ng-click="switchToEditMode()">{{ valueText }}</div>' +
+                            '</div>' +
+                            '<div ng-show="editing">' +
+                                '<input type="text" ng-model="newValue">' +
+                                '<a class="btn-list btn-save" ng-click="sendNewValue()">' +
+                                    '<img src="images/icon-save.jpg" width="30"/>'+
+                                '</a>'+
+                            '</div>' +
+                          '</div>'
+                }
+        })
+
+
+        //main controller
+        app.controller('MyController', ['$scope', function ($scope) {
+
+            $scope.IsVisible = false;
+            $scope.HideFlag = false;
+            $scope.ShowFlag = false;
+
+            $scope.lists = [];
+
+            //create list
+            $scope.newList = function (list) {
+                $scope.lists.push({ list, item: [] });
+            }
+
+           
+            //add item
+            $scope.addItem = function(index,newitem){
+                $scope.lists[index].item.push({'name':newitem,'done':false });
+            }
+
+
+            //cancel
+            $scope.canCel = function(hideStyle){
+                $scope.hideStyle = {
+                    "display" : "none",
+                }
+            }
+
+            //show input
+            $scope.showInput = function(){
+                $scope.IsVisible = true;
+            }
+
+            //hide button
+            $scope.hideButton = function(){
+                $scope.HideFlag = true;
+            }
+
+            //delete list
+            $scope.delList = function(index){
+                $scope.lists.splice(index, 1);
+            }
+
+            //delete item
+            $scope.delItem = function(index,list){
+                for( var i = 0;i<list.length ; i++) {
+                    $scope.lists[i].item.splice(index, 1); 
+                }
+            }   
+
+            //update label
+            $scope.updateLabel = function (index,newText) {
+                if (newText && newText.length > 0)
+                {
+                    angular.forEach($scope.lists, function () {
+                        if (index === index) {
+                            $scope.lists[index].list = newText;
+                        }
+                    });
+                }
+                $scope.ShowFlag = true;
+            };
+
+
+
+
+            //Move item
+            $scope.MoveItem = function(item_id) {
+
+                console.log('item_id: ' +item_id);   //1
+
+                // Check if dropped in origin and drop in list 1
+
+                for( var i = 0;i<$scope.lists.length ; i++) {
+                    
+                    for( var j = 0;j<$scope.lists[0].item.length ; j++) {
+
+                        if ($scope.lists[0].item[j].name == item_id) {
+
+                            //remove item
+                            var item = $scope.lists[0].item.splice(j, 1);
+
+                            //add item
+                            $scope.lists[1].item.push(item[0]);
+                        }
+
+                    }
+                }
+
+                // Update UI
+                $scope.$apply();
+            }
+
+        }]); //end app
+
+
+        //drag
+        app.directive('draggable', function() {
+        return function(scope, element, attrs) {
+            var el = element[0];
+            el.draggable = true; // Make dragable
+
+            // Add event listeners
+            el.addEventListener(
+                'dragstart',
+                function(e) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('item_id', this.id);    //item name
+                   
+                    this.classList.add('dragging');
+                    return false;
+                }, false
+            );
+
+            el.addEventListener(
+                'dragend',
+                function(e) {
+                    this.classList.remove('dragging');
+                    return false;
+                },
+                false
+            );
+        }
+    });
+
+
+    //drop
+    app.directive('droppable', function() {
+        return function(scope, element, attrs,index,list) {
+
+            var el = element[0];
+
+            el.addEventListener(
+                'dragover',
+                function(e) {
+                    e.preventDefault(); // Allow the drop
+
+                    // Set effects
+                    e.dataTransfer.dropEffect = 'move';
+                    this.classList.add('dragover');
+                    return false;
+                    }, false
+            );
+
+            el.addEventListener(
+                'dragenter',
+                function(e) {
+                    this.classList.add('dragover');
+                    return false;
+                }, false
+            );
+
+            el.addEventListener(
+                'dragleave',
+                function(e) {
+                    this.classList.remove('dragover');
+                    return false;
+                }, false
+            );
+
+            el.addEventListener(
+                'drop',
+                function(e) {
+                    this.classList.remove('dragover');
+
+                    // Get the data
+              
+                    var item_to_move = e.dataTransfer.getData('item_id');   //item drag
+                
+
+                    // Call move function
+                    scope.MoveItem( item_to_move);
+                    return false;
+                }, false
+            );
+        }
+    });
+
+
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,21 @@
+
+/*Iphone(480 x 640)*/
+@media screen and (min-width: 320px){
+    #main-container {
+        width: 100%;
+        float: left;
+    }
+
+    #head-container .ftop-right {
+        float: left;
+        margin-top: 20px;
+    }
+}
+
+
+/*Ipad (1024 x 768)*/
+@media screen and (min-width: 1024px){
+    #head-container .ftop-right {
+        float: right;
+    }
+}
